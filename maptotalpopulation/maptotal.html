@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Population Based on Academic Level</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        /* Style for the color legend */
+        .legend {
+            background: white;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            position: absolute;
+            bottom: 30px;
+            left: 10px;
+            z-index: 1;
+            border-radius: 5px;
+        }
+        .legend h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        .legend div {
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .legend span {
+            display: inline-block;
+            width: 20px;
+            height: 10px;
+            margin-right: 5px;
+        }
+        
+        /* Style for title */
+        .title {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Style for dropdown */
+        .dropdown-container {
+            text-align: center;
+            margin: 10px;
+        }
+        .dropdown-container select {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        /* Style for source line */
+        .source {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- Title for the map -->
+    <div class="title">Total Population Based on Academic Level</div>
+
+    <!-- Dropdown menu for selecting education level -->
+    <div class="dropdown-container">
+        <label for="education-level">Select Academic Level: </label>
+        <select id="education-level" aria-label="Select Academic Level">
+            <option value="less_than_hs">Less than High School</option>
+            <option value="hs_graduate">High School Graduate</option>
+            <option value="some_college">Some College or Associate's Degree</option>
+            <option value="bachelor_degree">Bachelor's Degree</option>
+            <option value="grad_degree">Graduate or Professional Degree</option>
+        </select>
+    </div>
+
+    <div id="map" style="width: 100%; height: 600px; margin-top: 10px;"></div>
+
+    <!-- Corrected Percentage Legend -->
+    <div class="legend" id="legend">
+        <h4>Percentage of the CT population</h4>
+        <div><span style="background-color: #f7fcf0;"></span> 0%</div>
+        <div><span style="background-color: #addd8e;"></span> 10%</div>
+        <div><span style="background-color: #31a354;"></span> 20%</div>
+        <div><span style="background-color: #006837;"></span> 30%</div>
+        <div><span style="background-color: #004529;"></span> 36%</div>
+    </div>
+
+    <!-- Source line for the map -->
+    <div class="source">
+        Source: Census Reporter, Geographical Mobility in 2022 by Educational Attainment for Current Residence in the United States.
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoicmVuYXRhZGFvdSIsImEiOiJjbHlxZTBpOGExMW10MmtvOG1xN3U3NHc5In0.WiYtOm-YMncg-u4UwCN_8A'; // Replace with your Mapbox token
+    
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/renatadaou/cm0vhdqog00a701ntfx1q88fz',
+            center: [-72.6822, 41.7658], // Connecticut coordinates
+            zoom: 7.5
+        });
+
+        // Function to format numbers with commas
+        function formatNumberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        map.on('load', () => {
+            // Load the updated GeoJSON file with percentages
+            map.addSource('ConnecticutPlanningRegions', {
+                type: 'geojson',
+                data: 'updated_merged_data.geojson' // Make sure to update with your actual path
+            });
+    
+            // Create the initial fill layer based on the default education level with proportional colors
+            map.addLayer({
+                id: 'region-fills',
+                type: 'fill',
+                source: 'ConnecticutPlanningRegions',
+                layout: {},
+                paint: {
+                    // Adjusted color scale to reflect the 0% to 36% range
+                    'fill-color': ['interpolate', ['linear'], ['get', 'less_than_hs_percentage'], 
+                                    0, '#f7fcf0',  // Light green for lowest percentages
+                                    0.1, '#addd8e', // Medium green for around 10%
+                                    0.2, '#31a354',  // Darker green for around 20%
+                                    0.3, '#006837',  // Very dark green for around 30%
+                                    0.36, '#004529'  // Dark green-black for the highest percentage of 36%
+                                  ],
+                    'fill-opacity': 0.9 // Increased opacity for more contrast
+                }
+            });
+    
+            // Add borders for the regions
+            map.addLayer({
+                id: 'region-borders',
+                type: 'line',
+                source: 'ConnecticutPlanningRegions',
+                layout: {},
+                paint: {
+                    'line-color': '#000000',
+                    'line-width': 1
+                }
+            });
+    
+            // Update map when dropdown changes
+            document.getElementById('education-level').addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                let percentageProperty = '';
+
+                switch (selectedValue) {
+                    case 'less_than_hs':
+                        percentageProperty = 'less_than_hs_percentage';
+                        break;
+                    case 'hs_graduate':
+                        percentageProperty = 'hs_graduate_percentage';
+                        break;
+                    case 'some_college':
+                        percentageProperty = 'some_college_percentage';
+                        break;
+                    case 'bachelor_degree':
+                        percentageProperty = 'bachelor_degree_percentage';
+                        break;
+                    case 'grad_degree':
+                        percentageProperty = 'grad_degree_percentage';
+                        break;
+                }
+    
+                // Update the fill color dynamically based on the chosen educational level's percentage
+                map.setPaintProperty('region-fills', 'fill-color', [
+                    'interpolate',
+                    ['linear'],
+                    ['get', percentageProperty],
+                    0, '#f7fcf0',  // Light green for lowest percentages
+                    0.1, '#addd8e', // Medium green for around 10%
+                    0.2, '#31a354',  // Darker green for around 20%
+                    0.3, '#006837',  // Very dark green for around 30%
+                    0.36, '#004529'  // Dark green-black for the highest percentage of 36%
+                ]);
+            });
+
+            // Add hover effect to display popup with educational total values and percentages
+            const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+            });
+
+            map.on('mousemove', 'region-fills', (e) => {
+                const region = e.features[0];
+                const properties = region.properties;
+
+                // Get the total values and format using commas
+                const lessThanHS = formatNumberWithCommas(properties['Less than high school graduate']);
+                const hsGrad = formatNumberWithCommas(properties['High school graduate (includes equivalency)']);
+                const someCollege = formatNumberWithCommas(properties["Some college or associate's degree"]);
+                const bachelor = formatNumberWithCommas(properties["Bachelor's degree"]);
+                const gradDegree = formatNumberWithCommas(properties['Graduate or professional degree']);
+
+                // Get the percentage values for each category
+                const lessThanHSPercentage = (properties['less_than_hs_percentage'] * 100).toFixed(2) + '%';
+                const hsGradPercentage = (properties['hs_graduate_percentage'] * 100).toFixed(2) + '%';
+                const someCollegePercentage = (properties['some_college_percentage'] * 100).toFixed(2) + '%';
+                const bachelorPercentage = (properties['bachelor_degree_percentage'] * 100).toFixed(2) + '%';
+                const gradDegreePercentage = (properties['grad_degree_percentage'] * 100).toFixed(2) + '%';
+
+                // Set the popup content with total values and percentages
+                const content = `
+                    <strong>${properties.REGPLANORG}</strong><br>
+                    <strong>Less than HS:</strong> ${lessThanHS} (${lessThanHSPercentage})<br>
+                    <strong>HS Graduate:</strong> ${hsGrad} (${hsGradPercentage})<br>
+                    <strong>Some College:</strong> ${someCollege} (${someCollegePercentage})<br>
+                    <strong>Bachelor's Degree:</strong> ${bachelor} (${bachelorPercentage})<br>
+                    <strong>Graduate Degree:</strong> ${gradDegree} (${gradDegreePercentage})
+                `;
+
+                // Set the popup location and content
+                popup.setLngLat(e.lngLat).setHTML(content).addTo(map);
+            });
+
+            // Remove popup when not hovering
+            map.on('mouseleave', 'region-fills', () => {
+                popup.remove();
+            });
+        });
+    </script>
+</body>
+</html>
