@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display a map on a webpage</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoicmVuYXRhZGFvdSIsImEiOiJjbHlxZTBpOGExMW10MmtvOG1xN3U3NHc5In0.WiYtOm-YMncg-u4UwCN_8A';
+        
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/renatadaou/cm0zfvp4l00nr01ntc317h3rj', // custom style URL
+            center: [-72.7, 41.6], // starting position [lng, lat]
+            zoom: 7.5 // starting zoom
+        });
+
+        // Add the tileset source
+        map.on('load', () => {
+            map.addSource('custom-tileset', {
+                'type': 'vector',
+                'url': 'mapbox://renatadaou.6lbf47r1' // Correct tileset URL
+            });
+
+            // Create the initial fill layer based on the default education level with proportional colors
+            map.addLayer({
+                id: 'region-fills',
+                type: 'fill',
+                source: 'custom-tileset',
+                'source-layer': 'updated_merged_data-6m2506', // Ensure this matches the tileset's source-layer name
+                paint: {
+                    'fill-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'education_level'], // Replace with your property name
+                        0, '#f8d5cc', // Replace with your color scale
+                        100, '#f4bfbf'
+                    ],
+                    'fill-opacity': 0.8
+                }
+            });
+        });
+    </script>
+</body>
+</html>

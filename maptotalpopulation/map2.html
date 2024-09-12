@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Total Population Based on Academic Level</title>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
     <style>
         /* Style for the color legend */
         .legend {
@@ -98,127 +98,137 @@
     </div>
 
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoicmVuYXRhZGFvdSIsImEiOiJjbHlxZTBpOGExMW10MmtvOG1xN3U3NHc5In0.WiYtOm-YMncg-u4UwCN_8A'; // Replace with your Mapbox token
+    mapboxgl.accessToken = 'pk.eyJ1IjoicmVuYXRhZGFvdSIsImEiOiJjbHlxZTBpOGExMW10MmtvOG1xN3U3NHc5In0.WiYtOm-YMncg-u4UwCN_8A';
     
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/renatadaou/cm0y8mqvb00jk01nt5hui14d7',
-            center: [-72.6822, 41.7658], // Connecticut coordinates
-            zoom: 7.5
+    const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/renatadaou/cm0zfvp4l00nr01ntc317h3rj', // custom style URL
+            center: [-72.7, 41.6], // starting position [lng, lat]
+            zoom: 7.5 // starting zoom
         });
 
-        // Function to format numbers with commas
-        function formatNumberWithCommas(x) {
-            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-
-        map.on('load', () => {
-            map.addSource('ConnecticutPlanningRegions', {
-                type: 'vector',
-                url: 'https://studio.mapbox.com/tilesets/renatadaou.drx2ewgw' // Correct your tileset URL here
+     // Add the tileset source
+     map.on('load', () => {
+            map.addSource('custom-tileset', {
+                'type': 'vector',
+                'url': 'mapbox://renatadaou.6lbf47r1' // Correct tileset URL
             });
 
-            // Create the initial fill layer based on the default education level with proportional colors
-            map.addLayer({
-                id: 'region-fills',
-                type: 'fill',
-                source: 'ConnecticutPlanningRegions',
-                'source-layer': 'renatadaou.drx2ewgw', // Ensure this matches the tileset's source-layer name
-                paint: {
-                    'fill-color': ['interpolate', ['linear'], ['get', 'less_than_hs_percentage'], 
-                                    0, '#f7fcf0',  
-                                    0.1, '#addd8e', 
-                                    0.2, '#31a354',  
-                                    0.3, '#006837',  
-                                    0.36, '#004529'  
-                                  ],
-                    'fill-opacity': 0.9
-                }
-            });
-
-            map.addLayer({
-                id: 'region-borders',
-                type: 'line',
-                source: 'ConnecticutPlanningRegions',
-                paint: {
-                    'line-color': '#000000',
-                    'line-width': 1
-                }
-            });
-
-            document.getElementById('education-level').addEventListener('change', (e) => {
-                const selectedValue = e.target.value;
-                let percentageProperty = '';
-
-                switch (selectedValue) {
-                    case 'less_than_hs':
-                        percentageProperty = 'less_than_hs_percentage';
-                        break;
-                    case 'hs_graduate':
-                        percentageProperty = 'hs_graduate_percentage';
-                        break;
-                    case 'some_college':
-                        percentageProperty = 'some_college_percentage';
-                        break;
-                    case 'bachelor_degree':
-                        percentageProperty = 'bachelor_degree_percentage';
-                        break;
-                    case 'grad_degree':
-                        percentageProperty = 'grad_degree_percentage';
-                        break;
-                }
-
-                map.setPaintProperty('region-fills', 'fill-color', [
-                    'interpolate',
-                    ['linear'],
-                    ['get', percentageProperty],
-                    0, '#f7fcf0',  
-                    0.1, '#addd8e', 
-                    0.2, '#31a354',  
-                    0.3, '#006837',  
-                    0.36, '#004529' 
-                ]);
-            });
-
-            const popup = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false
-            });
-
-            map.on('mousemove', 'region-fills', (e) => {
-                const region = e.features[0];
-                if (region) {
-                    const properties = region.properties;
-
-                    const lessThanHS = formatNumberWithCommas(properties['Less than high school graduate']);
-                    const hsGrad = formatNumberWithCommas(properties['High school graduate (includes equivalency)']);
-                    const someCollege = formatNumberWithCommas(properties["Some college or associate's degree"]);
-                    const bachelor = formatNumberWithCommas(properties["Bachelor's degree"]);
-                    const gradDegree = formatNumberWithCommas(properties['Graduate or professional degree']);
-
-                    const lessThanHSPercentage = (properties['less_than_hs_percentage'] * 100).toFixed(2) + '%';
-                    const hsGradPercentage = (properties['hs_graduate_percentage'] * 100).toFixed(2) + '%';
-                    const someCollegePercentage = (properties['some_college_percentage'] * 100).toFixed(2) + '%';
-                    const bachelorPercentage = (properties['bachelor_degree_percentage'] * 100).toFixed(2) + '%';
-                    const gradDegreePercentage = (properties['grad_degree_percentage'] * 100).toFixed(2) + '%';
-
-                    const content = `
-                        <strong>${properties.REGPLANORG}</strong><br>
-                        <strong>Less than HS:</strong> ${lessThanHS} (${lessThanHSPercentage})<br>
-                        <strong>HS Graduate:</strong> ${hsGrad} (${hsGradPercentage})<br>
-                        <strong>Some College:</strong> ${someCollege} (${someCollegePercentage})<br>
-                        <strong>Bachelor's Degree:</strong> ${bachelor} (${bachelorPercentage})<br>
-                        <strong>Graduate Degree:</strong> ${gradDegree} (${gradDegreePercentage})
-                    `;
-
-                    popup.setLngLat(e.lngLat).setHTML(content).addTo(map);
-                }
-            });
-
-            map.on('mouseleave', 'region-fills', () => {
-                popup.remove();
-            });
+        // Create the initial fill layer based on the default education level with proportional colors
+        map.addLayer({
+            id: 'region-fills',
+            type: 'fill',
+            source: 'custom-tileset',
+            'source-layer': 'updated_merged_data-6m2506', // Ensure this matches the tileset's source-layer name
+            paint: {
+                'fill-color': ['interpolate', ['linear'], ['get', 'less_than_hs_percentage'], 
+                                0, '#f7fcf0',  
+                                0.1, '#addd8e', 
+                                0.2, '#31a354',  
+                                0.3, '#006837',  
+                                0.36, '#004529'  
+                              ],
+                'fill-opacity': 0.9
+            }
         });
+
+        // Add region borders
+        map.addLayer({
+            id: 'region-borders',
+            type: 'line',
+            source: 'custom-tileset',
+            'source-layer': 'updated_merged_data-6m2506', // Ensure this matches the tileset's source-layer name
+            paint: {
+                'line-color': '#000000',
+                'line-width': 1 // Adjust the width of the borders as needed
+            }
+        });
+
+        // Event listener for dropdown to change fill color based on the selected education level
+        document.getElementById('education-level').addEventListener('change', (e) => {
+            const selectedValue = e.target.value;
+            let percentageProperty = '';
+
+            switch (selectedValue) {
+                case 'less_than_hs':
+                    percentageProperty = 'less_than_hs_percentage';
+                    break;
+                case 'hs_graduate':
+                    percentageProperty = 'hs_graduate_percentage';
+                    break;
+                case 'some_college':
+                    percentageProperty = 'some_college_percentage';
+                    break;
+                case 'bachelor_degree':
+                    percentageProperty = 'bachelor_degree_percentage';
+                    break;
+                case 'grad_degree':
+                    percentageProperty = 'grad_degree_percentage';
+                    break;
+            }
+
+            map.setPaintProperty('region-fills', 'fill-color', [
+                'interpolate',
+                ['linear'],
+                ['get', percentageProperty],
+                0, '#f7fcf0',  
+                0.1, '#addd8e', 
+                0.2, '#31a354',  
+                0.3, '#006837',  
+                0.36, '#004529' 
+            ]);
+        });
+
+        // Add popups to show region details
+        const popup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false
+        });
+
+        map.on('mousemove', 'region-fills', (e) => {
+            const region = e.features[0];
+            if (region) {
+                const properties = region.properties;
+
+                const lessThanHS = formatNumberWithCommas(properties['Less than high school graduate']);
+                const hsGrad = formatNumberWithCommas(properties['High school graduate (includes equivalency)']);
+                const someCollege = formatNumberWithCommas(properties["Some college or associate's degree"]);
+                const bachelor = formatNumberWithCommas(properties["Bachelor's degree"]);
+                const gradDegree = formatNumberWithCommas(properties['Graduate or professional degree']);
+
+                const lessThanHSPercentage = (properties['less_than_hs_percentage'] * 100).toFixed(2) + '%';
+                const hsGradPercentage = (properties['hs_graduate_percentage'] * 100).toFixed(2) + '%';
+                const someCollegePercentage = (properties['some_college_percentage'] * 100).toFixed(2) + '%';
+                const bachelorPercentage = (properties['bachelor_degree_percentage'] * 100).toFixed(2) + '%';
+                const gradDegreePercentage = (properties['grad_degree_percentage'] * 100).toFixed(2) + '%';
+
+                const content = `
+                    <strong>${properties.REGPLANORG}</strong><br>
+                    <strong>Less than HS:</strong> ${lessThanHS} (${lessThanHSPercentage})<br>
+                    <strong>HS Graduate:</strong> ${hsGrad} (${hsGradPercentage})<br>
+                    <strong>Some College:</strong> ${someCollege} (${someCollegePercentage})<br>
+                    <strong>Bachelor's Degree:</strong> ${bachelor} (${bachelorPercentage})<br>
+                    <strong>Graduate Degree:</strong> ${gradDegree} (${gradDegreePercentage})
+                `;
+
+                popup.setLngLat(e.lngLat).setHTML(content).addTo(map);
+            }
+        });
+
+        map.on('mouseleave', 'region-fills', () => {
+            popup.remove();
+        });
+
+        // Debug: Ensure data is loading correctly
+        map.on('click', 'region-fills', function (e) {
+            console.log(e.features[0].properties); // Inspect data
+        });
+    });
+
+    // Helper function to format numbers with commas
+    function formatNumberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
     </script>
 </body>
 </html>
