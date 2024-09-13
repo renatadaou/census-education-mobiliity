@@ -1,2 +1,2 @@
 # census-education-mobiliity
- CT Mirror
+ CT Mirror / Charting Connecticut
